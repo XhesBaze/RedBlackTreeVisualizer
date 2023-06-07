@@ -3,19 +3,11 @@ package application;
 import java.util.ArrayList;
 
 public class RedBlackTree<E extends Comparable<E>> {
+	protected TreeNode<E> root;
+	protected final TreeNode<E> leaf = new TreeNode<E>(null, "BLACK");
 	
-
-	//needed data fields
-	public TreeNode<E> root;
-	public TreeNode<E> leaf = new TreeNode<E>(null, "BLACK");
+	public RedBlackTree() {}
 	
-
-	// default constructor
-	public RedBlackTree() {
-		
-	}
-	
-	//constructor that takes an array as argument as uses it to store the values we want to insert into the tree
 	public RedBlackTree(E[] array) {
 		if (array.length != 0) {
 			for (int i = 0; i < array.length; i++) {
@@ -23,199 +15,175 @@ public class RedBlackTree<E extends Comparable<E>> {
 			}
 		}
 	}
+
+	public void insert(E key) {
+		TreeNode<E> child = new TreeNode<>(key, "RED");
+		child.left = leaf; // at the beginning the left and right children are null
+		child.right = leaf; 
+		
+		//if the tree is empty, make the new node the root
+		if (isEmpty()) {
+			root = child;
+		}
+		else {
+				
+			//does the insertion after the position of where the element should be is determined by the position() method
+			    TreeNode<E> parent = position(key);
+			    //inserts the element
+				if (key.compareTo(parent.getData()) < 0) {
+					parent.left = child;
+				}
+				else {
+					parent.right = child;
+				}
+				child.parent = parent;
+			
+			}
+		//does the color fix
+		fixingColorsAfterInsertion(child); 
+	}
 	
-	// method used for insertion
-	public void insert(E element) {
 
-	    TreeNode<E> child = new TreeNode<>(element, "RED");//new node, a child node is always red
-	    child.setLeft(leaf);  //the successors of each child node are leafs at the beginning
-	    child.setRight(leaf); 
-
-	    if (isEmpty()) {
-	    	// if the tree is empty, make the child node the root
-	        root = child;
-	    } else {//data fields we'll use for iterating the tree, we'll need to start from the root, so we copy its content to parent and current nodes
-	        TreeNode<E> parent = root;
-	        TreeNode<E> current = root;
-	     // if the node is not a leaf,the tree is not empty
-	        while (current != leaf) { 
-	        	//if the element we want to insert is smaller than the node's element, we need to make it the left child
-	            if (element.compareTo(current.getData()) < 0) {
-	            	// current becomes the parent of the new element and we continue to its left child
-	                parent = current;
-	                current = current.getLeft();
-	              //if the element we want to insert is bigger than the node's element,we need to make it the right child
-	            } else if (element.compareTo(current.getData()) > 0) {
-	            	//current becomes the parent of the new element and we continue to its right child
-	                parent = current;
-	                current = current.getRight();
-	            }
-	        }
-	      //inserting the element as the left/right child as determined
-	        if (element.compareTo(parent.getData()) < 0) {
-	            parent.setLeft(child);
-	        } else {
-	            parent.setRight(child);
-	        }
-	      //setting the node's parent after insertion 
-	        child.setParent(parent);
-	    }
-
-	    //method to fix colours after insertion
-	    fixingColoursAfterInsertion(child); 
+	//determines the position of where the new element should be inserted
+	private TreeNode<E> position(E key) {
+		TreeNode<E> parent = root;
+		TreeNode<E> current = root;
+		while (current != leaf) { 
+			if (key.compareTo(current.getData()) < 0) {
+				parent = current;
+				current = current.left;
+			}
+			else if (key.compareTo(current.getData()) > 0) {
+				parent = current;
+				current = current.right;
+			}
+		}
+		return parent;
 	}
-
-	//helper method to adjust the colours of each node after insertion
-	private void fixingColoursAfterInsertion(TreeNode<E> node) {
-		//if the root's colour is red, we change it to black,since the root is always black
-	    if (root.getColor().equals("RED")) {
-	        root.setColor("BLACK"); 
-	    //  if the parent of the new node is black,it is correct, so we don't perform any actions
-	    } else if (node.getParent().getColor().equals("BLACK")) {
-	        
-	    } else {
-	    	// if the parent and the uncle of the node are red, we need to make them black, since siblings can't both be red
-	        TreeNode<E> parent = node.getParent();
-	        TreeNode<E> uncle = uncle(node);
-	        TreeNode<E> grandparent = grandparent(node);
-
-	        if (isRed(parent) && isRed(uncle)) {
-	        	
-	            parent.setColor("BLACK");
-	            uncle.setColor("BLACK");
-	            grandparent.setColor("RED");
-
-	        }
-	      //if parent is red and uncle is black, it means that the rule we mentioned above is broken, since two siblings need to be black always
-	      //to fix this we need to perform rotation
-	        else if (isRed(parent) && isBlack(uncle)) {
-
-	        	//in the case of a LR rotation
-	            if (isRightChild(node) && isLeftChild(parent)) {
-	                rotateL(parent);
-	                TreeNode<E> temp = node;
-	                node = parent;
-	                parent = temp;
-
-	              //in case of a RL rotation
-	            } else if (isLeftChild(node) && isRightChild(parent)) {
-	                rotateR(parent);
-	                TreeNode<E> temp = node;
-	                node = parent;
-	                parent = temp;
-	            }
-
-	         // in case of a LL rotation
-	            if (isLeftChild(node) && isLeftChild(parent)) {
-	                parent.setColor("BLACK");
-	                grandparent.setColor("RED");
-	                rotateR(grandparent);
-
-	              //in case of a RR rotation
-	            } else if (isRightChild(node) && isRightChild(parent)) {
-	                parent.setColor("BLACK");
-	                grandparent.setColor("RED");
-	                rotateL(grandparent);
-	            }
-	        }
-	    }
+	
+	//method to fix colours after insertion
+	private void fixingColorsAfterInsertion(TreeNode<E> node) {
+		
+		// first case: root is red, we need to change it to black
+		if (root.color.equals("RED")) {
+			root.color = "BLACK"; 
+		}
+		
+		// second case: parent is black, it's the default rule, do nothing
+		else if (node.parent.color.equals("BLACK")) {} 
+		
+		else {
+			TreeNode<E> parent = node.parent;
+			TreeNode<E> uncle = uncle(node);
+			TreeNode<E> grandparent = grandparent(node);
+			// third case: the parent and uncle are both red, two siblings cannot be red, we need to make one of them red
+			if (isRed(parent) && isRed(uncle)) {
+				parent.color = "BLACK"; 			// change parent to black
+				uncle.color = "BLACK"; 			 	// change uncle to black
+				grandparent.color = "RED"; 		// change grandparent to red, a red node can't have red children
+				fixingColorsAfterInsertion(grandparent); 	// checking grandparent for any mistakes done
+			}
+			
+			// case four one: inner grandchild (LR rotation)
+			else if (parent.color.equals("RED") && uncle.color.equals("BLACK")) {
+				
+				if (isRightChild(node) && isLeftChild(parent)) {
+					leftRotate(parent);
+					
+					// swap the node and the parent (the first part of the rotation)
+					TreeNode<E> temp = node;
+					node = parent;
+					parent = temp;
+				}
+				
+				// case four two : outer grandchild (RL rotation)
+				else if (isLeftChild(node) && isRightChild(parent)) {
+					rightRotate(parent);
+					
+					// swap the node and the parent (the second part of the rotation)
+					TreeNode<E> temp = node;
+					node = parent;
+					parent = temp;
+				}
+				
+				// case five one: LL rotation (parent and node cannot be both red)
+				if (isLeftChild(node) && isLeftChild(parent)) {
+					parent.color = "BLACK";		// change parent to black (parent becomes the new root, so it must be black)
+					grandparent.color = "RED";	// change grandparent to red (it becomes the right child of the new root, so it must be red, because it becomes a sibling)
+					rightRotate(grandparent);	// right rotate the grandparent (making the grandparent the right child)
+				}
+				
+				// case five two: RR rotation
+				else if (isRightChild(node) && isRightChild(parent)) {
+					parent.color = "BLACK";		// change parent to black (parent becomes the new root, so it must be black)
+					grandparent.color = "RED";	// change grandparent to red (it becomes the left child of the new root, so it must be red, because it becomes a sibling)
+					leftRotate(grandparent);	// right rotate the grandparent (making the grandparent the left child)
+				}
+			}
+		}
 	}
+	
 
-	//method used for deletion
-	public void delete(E element) {
+	public void delete(E key) {
+		if (isEmpty()) {
+				System.out.println("Tree is empty.");
+		}
 		try {
-			//needed data fields
-			TreeNode<E> temp = root;
-			TreeNode<E> parent = null;
-
-			//continue searching until we reach a leaf node
-			while (temp != leaf) {
-				//find the node which has the element we want to delete
-				if (element.equals(temp.getData())) {
-					break;
-				}
-				parent = temp;
-				//determining the position of the node
-				if (element.compareTo(temp.getData()) < 0) {
-					temp = temp.getLeft();
-				} else {
-					temp = temp.getRight();
-				}
-			}
-			//if we traversed the tree but didn't find the element
-			if (temp == leaf) {
-				throw new NullPointerException("The item cannot be found in the tree.");
-			}
-
-			// if a leaf node gets deleted
-			if (isLeaf(temp)) { 
-				//if the root is the leaf node, set the root's reference to null
-				if (temp.equals(root)) { 
+			TreeNode<E> node = nodeToBeDeleted(key);
+			TreeNode<E> parent = node.parent;
+			if (isLeaf(node)) { // case 1: node is the only node in the tree
+				if (node.equals(root)) { 
 					root = null;
-				} else {
-					// if the node is a left child, set the left child of the parent to the leaf node
-					if (isLeftChild(temp)) {
-						parent.setLeft(leaf);
-					} 
-					// if the node is a right child, set the right child of the parent to the leaf node
-					else if (isRightChild(temp)) {
-						parent.setRight(leaf);
+				}
+				else {
+					if (isLeftChild(node)) {
+						parent.left = leaf;
 					}
-					leaf.setParent(parent);  // setting the parent after deletion
-					
-					
-					//if the deleted node is black, set the colour of leaf node as DoubleBlack, as an indicator that it needs fixing
-					// call fixing colours to fix the colour
-					if (temp.getColor().equals("BLACK")) {
-						leaf.setColor("DoubleBLACK");
-						fixingColorsAfterDeletion(leaf);
+					else if (isRightChild(node)) {
+						parent.right = leaf;
+					}
+					leaf.parent = parent; 
+					if (node.color.equals("BLACK")) {
+						leaf.color = "TEMPBLACK";
+						fixTempBlack(leaf);
 					}
 				}
-			} 
-			//if the node to be deleted has a child
-			else if (numOfChildren(temp) == 1) { 
+			}
+			else if (numChildren(node) == 1) { // case 2: node has one child
 				TreeNode<E> child;
-				//finding the position of the child
-				if (temp.getLeft() == leaf) {
-					child = temp.getRight();
-				} else {
-					child = temp.getLeft();
+				if (node.left == leaf) {
+					child = node.right;
 				}
-				//if the node is the root, set the child as the new root
-				if (temp.equals(root)) {
+				else {
+					child = node.left;
+				}
+				if (node.equals(root)) {
 					root = child;
-				} 
-				//if the node is a left child,set the left child of the parent to the child node
-				else if (isLeftChild(temp)) {
-					parent.setLeft(child);
-				} else {
-					// if the node is a right child
-					parent.setRight(child);
 				}
-				// setting the parent node after deletion
-				child.setParent(parent); 
-				if (child.getColor().equals("RED") || temp.getColor().equals("RED")) { 
-					// if the child or the deleted node is red, the child needs to be black
-					child.setColor("BLACK");
-				} else if (child.getColor().equals("BLACK") && temp.getColor().equals("BLACK")) {
-					// if the child and the deleted node are black, set the child's colour to "DoubleBLACK" as an indicator that
-					//the colours need to be fixed
-					child.setColor("DoubleBLACK");
-					fixingColorsAfterDeletion(child);
+				else if (isLeftChild(node)) {
+					parent.left = child;
 				}
-			} 
-			//if the node that will be deleted has two children
-			else if (numOfChildren(temp) == 2) {
-				// if the node is the root and its left child is a leaf node,set the right child as the new root  
-				//set its colour to black
-				if (temp.equals(root) && temp.getLeft() == leaf) {
-					root = temp.getRight();
-					root.setColor("BLACK");
-				} else {
-					// find the maximum value in the left subtree of the node to be deleted
-					E max = max(temp);
-					delete(max); // recursively delete the maximum value
-					temp.setData(max); // replace the value of the node to be deleted with the maximum value
+				else {
+					parent.right = child;
+				}
+				child.parent = parent; 
+				if (child.color.equals("RED") || node.color.equals("RED")) { // node & child cannot both be red
+					child.color = "BLACK";
+				}
+				else if (child.color.equals("BLACK") && node.color.equals("BLACK")) {
+					child.color = "TEMPBLACK";
+					fixTempBlack(child);
+				}
+			}
+			else if (numChildren(node) == 2) { // case 3: node has two children
+				if (node.equals(root) && node.left == leaf) {
+					root = node.right;
+					root.color = "BLACK";
+				}
+				else {
+					E max = maxLeftSubtree(node);
+					delete(max);
+					node.setData(max);
 				}
 			}
 		} catch (NullPointerException e) {
@@ -223,128 +191,142 @@ public class RedBlackTree<E extends Comparable<E>> {
 		}
 	}
 	
-	// method to fix the colours of the nodes after a deletion
-	private void fixingColorsAfterDeletion(TreeNode<E> node) {
-	    if (node.equals(root)) {
-	    	// if the node is the root,set its colour to black
-	        node.setColor("BLACK"); 
-	    } else {
-	        TreeNode<E> sibling = sibling(node);
-	        TreeNode<E> parent = node.getParent();
 
-	        if (isRed(sibling)) {
-	        	//if the sibling is red, we need to make it black
-	            if (isRightChild(node)) {
-	                rotateR(parent);// right rotation 
-	            } else {
-	                rotateL(parent); // left rotation
-	            }
-	            sibling.setColor("BLACK"); // setting the colour to black
-	            sibling = sibling(node); // updating the reference
-	        }
-
-	     // if the sibling and its children are black, we need to fix the colours
-	        if (!isBlack(sibling.getLeft()) || !isBlack(sibling.getRight())) {
-	            
-	            TreeNode<E> RC; //red child
-
-	         // if the sibling is a left child
-	            if (isLeftChild(sibling)) {
-	                if (isRed(sibling.getRight())) {
-	                	// if the right child of the sibling is red, perform RL rotation
-	                    RC = sibling.getRight(); 
-	                    rotateL(sibling); 
-	                    rotateR(parent); 
-	                } else {
-	                	// if the right child of the sibling is black, perform a RR rotation
-	                    RC = sibling.getLeft();
-	                    rotateR(parent);
-	                }
-	            } else {
-	            	// if the left child of the sibling is red, perform LR rotation
-	                if (isRed(sibling.getLeft())) {
-	                    RC = sibling.getLeft();
-	                    rotateR(sibling);
-	                    rotateL(parent); 
-	                } else {
-	                	// if the left child of the sibling is black, perform a LL rotation
-	                    RC = sibling.getRight();
-	                    rotateL(parent); 
-	                }
-	            }
-
-	            RC.setColor(parent.getColor()); // set the red child's colour to its parent's colour
-	            sibling.setColor("BLACK"); //all the other nodes become black
-	            parent.setColor("BLACK"); 
-	            node.setColor("BLACK"); 
-	            
-	            // sibling and its children are black
-	        } else if (isBlack(sibling) && isBlack(sibling.getLeft()) && isBlack(sibling.getRight())) {
-	            if (isRed(parent)) {
-	                sibling.setColor("RED"); 
-	                parent.setColor("BLACK");
-	                node.setColor("BLACK");
-	            } else {
-	                sibling.setColor("RED");
-	                parent.setColor("DoubleBLACK"); 
-	                node.setColor("BLACK");
-	                fixingColorsAfterDeletion(parent);
-	            }
-	        }
-	    }
+	private TreeNode<E> nodeToBeDeleted(E key) {
+		TreeNode<E> current = root;
+		while (current != leaf) {
+			if (key.equals(current.getData())) {
+				return current;
+			}
+			else if (key.compareTo(current.getData()) < 0) {
+				current = current.left;
+			}
+			else if (key.compareTo(current.getData()) > 0) {
+				current = current.right;
+			}
+		}
+		throw new NullPointerException();
 	}
-
-	//method to perform left rotation
-	private void rotateL(TreeNode<E> root) {
-		TreeNode<E> temp = root.getRight();
-		temp.setParent(root.getParent()); 
+	
+	private void fixTempBlack(TreeNode<E> node) {
 		
-		if (this.root.equals(root)) { 
-			this.root = temp;
+		// case 1: root is tempblack
+		if (node.equals(root)) {
+			node.color = "BLACK"; 
 		}
-		else if (isLeftChild(root)) {
-			temp.getParent().setLeft(temp);
+		
+		else {
+			TreeNode<E> sibling = sibling(node);
+			TreeNode<E> parent = node.parent;
+			
+			// case 2: sibling is red
+			if (isRed(sibling)) {
+				
+				// case two one:  node is a right child
+				if (isRightChild(node)) {
+					sibling.color = "BLACK"; // change sibling to black
+					parent.color = "RED"; 	// change parent to red
+					rightRotate(parent); 	// right rotate the parent
+				}
+				
+				// case two two: The node is a left child
+				else if (isLeftChild(node)) {
+					sibling.color = "BLACK"; // change sibling to black
+					parent.color = "RED"; 	// change parent to red
+					leftRotate(parent); 	// left rotate the parent
+				}
+				fixTempBlack(node); 
+			}
+			
+			// case three: sibling has at least one red child
+			else if (hasRedChild(sibling)) {
+				TreeNode<E> RedChild; 
+				
+				// case three one: sibling is a left child
+				if (isLeftChild(sibling)) {
+					
+					// right child of the sibling is red
+					if (isRed(sibling.right)) {
+						RedChild = sibling.right;
+						leftRotate(sibling);		// LR the sibling
+						rightRotate(parent);		// RR the parent
+						RedChild.color = parent.color;// change RedChild to the color of parent
+						sibling.color = "BLACK";		// change sibling to black
+						parent.color = "BLACK";			// change parent to black
+						node.color = "BLACK";			// change node to black
+					}
+					
+					// left child of the sibling is red
+					else if (isRed(sibling.left)) {
+						RedChild = sibling.left;
+						rightRotate(parent);			// RR the parent
+						sibling.color = parent.color;	// change sibling to the color of parent
+						RedChild.color = "BLACK";		// change RedChild to black
+						parent.color = "BLACK";			// change parent to black
+						node.color = "BLACK";			// change node to black
+					}
+				}
+				
+				// case three two: sibling is a right child
+				else if (isRightChild(sibling)) {
+					
+					// left child of the sibling is red
+					if (isRed(sibling.left)) {
+						RedChild = sibling.left;
+						rightRotate(sibling);		// RR the sibling
+						leftRotate(parent);			// LR the parent
+						RedChild.color = parent.color;// change RedChild to the color of parent
+						sibling.color = "BLACK";	// change sibling to black
+						parent.color = "BLACK";		// change parent to black
+						node.color = "BLACK";		// change node to black
+					}
+					
+					//  right child of the sibling is red
+					else if (isRed(sibling.right)) {
+						RedChild = sibling.right;
+						leftRotate(parent);				// LL rotate the parent
+						sibling.color = parent.color;	// change sibling to the color of parent
+						RedChild.color = "BLACK";		// change RedChild to black
+						parent.color = "BLACK";			// change parent to black
+						node.color = "BLACK";			// change node to black
+					}
+				}
+			}
+			
+			// Case four: sibling and both of its children are black 
+			else if ((isBlack(sibling) && isBlack(sibling.left) && isBlack(sibling.right)) ||
+					 (isBlack(sibling) && isDoubleBlack(sibling.left) && isDoubleBlack(sibling.right))) {
+					 // second condition is used when the tempblack node is a leaf and the sibling's children are
+					 // leafs, since changing leafs to tempblack changes all instances of leafs to tempblack
+				
+				// case four one: parent of sibling is red
+				if (isRed(parent)) { 		// sibling and node share the same parent
+					sibling.color = "RED";	// change sibling to red
+					parent.color = "BLACK";	// change parent to black
+					node.color = "BLACK";	// change node to black
+				}
+				
+				// case four two: parent of sibling is black
+				else if (isBlack(sibling.parent)) {
+					sibling.color = "RED";	// change sibling to red
+					parent.color = "TEMPBLACK";	// change parent to double black
+					node.color = "BLACK";	// change node to black
+					fixTempBlack(parent);	
+				}
+			}
 		}
-		else if (isRightChild(root)) {
-			temp.getParent().setRight(temp);
-		}
-		root.setRight(temp.getLeft());
-		root.getRight().setParent(root); 
-		temp.setLeft(root);
-		temp.getLeft().setParent(temp); 
 	}
 	
 
-	//method to perform right rotation
-	private void rotateR(TreeNode<E> root) {
-		TreeNode<E> temp = root.getLeft();
-		temp.setParent(root.getParent()); 
-		
-		if (this.root.equals(root)) { 
-			this.root = temp;
-		}
-		else if (isLeftChild(root)) {
-			temp.getParent().setLeft(temp);
-		}
-		else if (isRightChild(root)) {
-			temp.getParent().setRight(temp);
-		}
-		root.setLeft(temp.getRight());
-		root.getLeft().setParent(root); 
-		temp.setRight(root);
-		temp.getRight().setParent(temp);
-	}
-
-	//method to find the max of the left subtree
-	private E max(TreeNode<E> node) {
-		TreeNode<E> current = node.getLeft();
-		while (current.getRight() != leaf) {
-			current = current.getRight();
+	private E maxLeftSubtree(TreeNode<E> node) {
+		TreeNode<E> current = node.left;
+		while (current.right != leaf) {
+			current = current.right;
 		}
 		return current.getData();
 	}
-
-	//method to check if a given element is in the tree
+	
+	
 	public boolean find(E key) {
 		TreeNode<E> current = root;
 		while (current != leaf) {
@@ -352,97 +334,89 @@ public class RedBlackTree<E extends Comparable<E>> {
 				return true;
 			}
 			else if (key.compareTo(current.getData()) < 0) {
-				current = current.getLeft();
+				current = current.left;
 			}
 			else if (key.compareTo(current.getData()) > 0) {
-				current = current.getRight();
+				current = current.right;
 			}
 		}
 		return false;
 	}
 	
-	//method to return the depth of a tree
+
 	public int depth(TreeNode<E> node) {
 		if (!find(node.getData())) {
-			throw new NullPointerException("The node cannot be found in the tree.");
+			throw new NullPointerException("Cannot find the element in the tree.");
 		}
 		if (node.equals(root)) { 
 			return 0;
 		}
-		return 1 + depth(node.getParent());
+		return 1 + depth(node.parent); 
 	}
 
-	//method to return the height of a tree
 	public int height(TreeNode<E> node) {
 		if (node == null) {
 			return -1;
 		}
-		return 1 + Math.max(height(node.getLeft()), height(node.getRight()));
+		return 1 + Math.max(height(node.left), height(node.right));
 	}
 	
 
-	//method that returns if a tree is empty or not
 	public boolean isEmpty() {
 		return root == null;
 	}
-
-	//method that checks if a node is a leaf or not
+	
+	
 	public boolean isLeaf(TreeNode<E> node) {
 		if (node == leaf) {
 			return false;
 		}
-		return (node.getLeft() == leaf) && (node.getRight() == leaf);
+		return (node.left == leaf) && (node.right == leaf);
 	}
 	
 
-	//method that checks if a node is a left child
 	public boolean isLeftChild(TreeNode<E> node) {
-		if (node.equals(root) || node.getParent().getLeft() == null) {
+		if (node.equals(root) || node.parent.left == null) {
 			return false;
 		}
-		return node.getParent().getLeft().equals(node);
+		return node.parent.left.equals(node);
 	}
 	
-
-	//method that checks if a node is a right child
+	
 	public boolean isRightChild(TreeNode<E> node) {
-		if (node.equals(root) || node.getParent().getRight() == null) {
+		if (node.equals(root) || node.parent.right == null) {
 			return false;
 		}
-		return node.getParent().getRight().equals(node);
+		return node.parent.right.equals(node);
 	}
 	
-
-	//method that returns the sibling of a node
+	
 	public TreeNode<E> sibling(TreeNode<E> node) {
 		if (node.equals(root)) {
 			return null;
 		}
 		else if (isLeftChild(node)) {
-			return node.getParent().getRight();
+			return node.parent.right;
 		}
-		return node.getParent().getLeft();
+		return node.parent.left;
 	}
 	
-
-	//method that returns the uncle of a node
+	
 	public TreeNode<E> uncle(TreeNode<E> node) {
-		if (node.equals(root) || node.equals(root.getLeft()) || node.equals(root.getRight())) {
+		if (node.equals(root) || node.equals(root.left) || node.equals(root.right)) {
 			return null;
 		}
-		return sibling(node.getParent());
+		return sibling(node.parent);
 	}
 	
 
-	//method that returns the grandparent of a node
 	public TreeNode<E> grandparent(TreeNode<E> node) {
-		if (node.equals(root) || node.equals(root.getLeft()) || node.equals(root.getRight())) {
+		if (node.equals(root) || node.equals(root.left) || node.equals(root.right)) {
 			return null;
 		}
-		return node.getParent().getParent();
+		return node.parent.parent;
 	}
 	
-	//method to get the elements of the tree in order traversal
 	public ArrayList<TreeNode<E>> inorder() {
 		ArrayList<TreeNode<E>> list = new ArrayList<>();
 		if (!isEmpty()) {
@@ -451,59 +425,92 @@ public class RedBlackTree<E extends Comparable<E>> {
 			while (!stack.isEmpty() || current != leaf) {
 				if (current != leaf) {
 					stack.push(current);
-					current = current.getLeft();
+					current = current.left;
 				}
 				else {
 					current = stack.pop();
 					list.add(current);
-					current = current.getRight();
+					current = current.right;
 				}
 			}
 		}
 		return list;
 	}
 	
-	//method to print the tree elements inorder
-	public void printInorder() {
-	    if (!isEmpty()) {
-	        LinkedListStack<TreeNode<E>> stack = new LinkedListStack<>();
-	        TreeNode<E> current = root;
-	        while (!stack.isEmpty() || current != leaf) {
-	            if (current != leaf) {
-	                stack.push(current);
-	                current = current.getLeft();
-	            } else {
-	                current = stack.pop();
-	                System.out.println(current.getData()); 
-	                current = current.getRight();
-	            }
-	        }
-	    }
-	}
 
-
-	//method to get the number of children of a node
-	private int numOfChildren(TreeNode<E> node) {
+	private int numChildren(TreeNode<E> node) {
 		int count = 0;
-		if (node.getLeft() != leaf) {
+		if (node.left != leaf) {
 			count++;
 		}
-		if (node.getRight() != leaf) {
+		if (node.right != leaf) {
 			count++;
 		}
 		return count;
 	}
 	
-
-	//method that checks if a node is red
+	
 	private boolean isRed(TreeNode<E> node) {
-		return node.getColor().equals("RED");
+		return node.color.equals("RED");
 	}
 	
 
-	//method that checks if a node is black
 	private boolean isBlack(TreeNode<E> node) {
-		return node.getColor().equals("BLACK");
+		return node.color.equals("BLACK");
 	}
-
+	
+	
+	private boolean isDoubleBlack(TreeNode<E> node) {
+		return node.color.equals("DOUBLEB");
+	}
+	
+	
+	private boolean hasRedChild(TreeNode<E> node) {
+		if (isRed(node.left) || isRed(node.right)) {
+			return true;
+		}
+		return false;
+	}
+	
+	
+	private void leftRotate(TreeNode<E> root) {
+		TreeNode<E> node = root.right;
+		node.parent = root.parent;
+		
+		// root of the entire tree is used as the root of the rotation
+		if (this.root.equals(root)) { 
+			this.root = node;
+		}
+		else if (isLeftChild(root)) {
+			node.parent.left = node;
+		}
+		else if (isRightChild(root)) {
+			node.parent.right = node;
+		}
+		root.right = node.left;
+		root.right.parent = root; 
+		node.left = root;
+		node.left.parent = node;
+	}
+	
+	
+	private void rightRotate(TreeNode<E> root) {
+		TreeNode<E> node = root.left;
+		node.parent = root.parent; 
+		
+		//  root of the entire tree is used as the root of the rotation
+		if (this.root.equals(root)) { 
+			this.root = node;
+		}
+		else if (isLeftChild(root)) {
+			node.parent.left = node;
+		}
+		else if (isRightChild(root)) {
+			node.parent.right = node;
+		}
+		root.left = node.right;
+		root.left.parent = root; 
+		node.right = root;
+		node.right.parent = node; 
+	}
 }
