@@ -5,10 +5,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextBoundsType;
 
 public class TreeView<E extends Comparable<E>> extends BorderPane {
     private RedBlackTree<E> tree = new RedBlackTree<>();
-    private double sideLength = 40; 
+    private double sideLength = 35; 
     private double vGap = 70; 
 
     public TreeView(RedBlackTree<E> tree) {
@@ -38,12 +39,23 @@ public class TreeView<E extends Comparable<E>> extends BorderPane {
         
         // displaying the current node with its value and colour
         Rectangle rectangle = new Rectangle(x - sideLength / 2, y - sideLength / 2, sideLength, sideLength);
-        Text text = new Text(x - 4, y + 4, root.getData() + "");
+        rectangle.setArcWidth(10); // Set the horizontal arc size
+        rectangle.setArcHeight(10); // Set the vertical arc size
+
+        Text text = new Text();
+        text.setText(root.getData() + "");
+        text.setBoundsType(TextBoundsType.VISUAL);
+        double textWidth = text.getLayoutBounds().getWidth();
+        double textHeight = text.getLayoutBounds().getHeight();
+
+        // center the text in the middle of the rectangle
+        text.setX(x - textWidth / 2);
+        text.setY(y + textHeight / 2);
+
         text.setStroke(Color.WHITE);
         if (root.getColor().equals("BLACK")) {
             rectangle.setFill(Color.BLACK);
-        }
-        else if (root.getColor().equals("RED")) {
+        } else if (root.getColor().equals("RED")) {
             rectangle.setFill(Color.RED);
         }
         getChildren().addAll(rectangle, text);
